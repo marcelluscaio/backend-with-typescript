@@ -6,6 +6,8 @@ export interface User {
   createdAt: Date;
 }
 
+export type NewUser = Omit<User, 'id' | 'createdAt'>;
+
 export type PublicUser = Omit<User, 'passwordHash'>;
 
 export function toPublicUser(user: User): PublicUser {

@@ -14,7 +14,10 @@ describe('Auth routes', () => {
     expect(response.status).toBe(201);
     expect(response.body.token).toEqual(expect.any(String));
     expect(response.body.user).toMatchObject({ name: 'Alice', email: 'alice@example.com' });
+    expect(response.body.user.id).toEqual(expect.any(String));
     expect(response.body.user).not.toHaveProperty('passwordHash');
+    expect(response.body.user).not.toHaveProperty('_id');
+    expect(response.body.user).not.toHaveProperty('__v');
   });
 
   it('rejects registration with an invalid email', async () => {
@@ -38,6 +41,7 @@ describe('Auth routes', () => {
     const response = await request(app).post('/api/auth/register').send(user);
 
     expect(response.status).toBe(409);
+    expect(response.body.message).toBe('Já existe um usuário com este e-mail');
   });
 
   it('logs in with valid credentials', async () => {
