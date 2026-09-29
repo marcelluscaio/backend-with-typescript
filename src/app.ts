@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import express, { Express } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
-import { buildContainer } from './container';
+import { ContainerOverrides, buildContainer } from './container';
 import { createApiRouter } from './routes';
 import { loggerMiddleware } from './middlewares/logger.middleware';
 import { notFoundMiddleware } from './middlewares/not-found.middleware';
@@ -10,12 +10,13 @@ import { errorMiddleware } from './middlewares/error.middleware';
 import { swaggerSpec } from './docs/swagger';
 
 /**
- * Assembles the Express application without binding a port, so it can be
- * imported directly by supertest in integration tests.
+ * Assembles the Express application without binding a port (and without any
+ * I/O side effect), so it can be imported directly by supertest in
+ * integration tests. Opening the database connection is the bootstrap's job.
  */
-export function createApp(): Express {
+export function createApp(overrides: ContainerOverrides = {}): Express {
   const app = express();
-  const container = buildContainer();
+  const container = buildContainer(overrides);
 
   app.use(cors());
   app.use(express.json());

@@ -22,8 +22,16 @@ export function createTaskRouter(container: Container): Router {
    *       - in: query
    *         name: status
    *         schema: { type: string, enum: [PENDING, IN_PROGRESS, DONE] }
+   *       - in: query
+   *         name: tag
+   *         schema: { type: string, example: "estudo" }
+   *       - in: query
+   *         name: dueBefore
+   *         description: Retorna apenas tarefas com vencimento até esta data
+   *         schema: { type: string, format: date-time }
    *     responses:
    *       200: { description: Lista de tarefas }
+   *       400: { description: Filtros inválidos }
    *       401: { description: Não autenticado }
    *   post:
    *     summary: Cria uma nova tarefa para o usuário autenticado
@@ -34,13 +42,7 @@ export function createTaskRouter(container: Container): Router {
    *       content:
    *         application/json:
    *           schema:
-   *             type: object
-   *             required: [title]
-   *             properties:
-   *               title: { type: string, example: "Estudar TypeScript" }
-   *               description: { type: string }
-   *               status: { type: string, enum: [PENDING, IN_PROGRESS, DONE] }
-   *               dueDate: { type: string, format: date-time }
+   *             $ref: '#/components/schemas/TaskInput'
    *     responses:
    *       201: { description: Tarefa criada }
    *       400: { description: Dados inválidos }
@@ -50,6 +52,25 @@ export function createTaskRouter(container: Container): Router {
     .route('/')
     .get(asyncHandler(taskController.list))
     .post(validateDto(CreateTaskDto), asyncHandler(taskController.create));
+
+  /**
+   * @openapi
+   * /api/tasks/stats:
+   *   get:
+   *     summary: Resumo das tarefas do usuário (contagem por status, atrasadas e tags mais usadas)
+   *     tags: [Tasks]
+   *     security: [{ bearerAuth: [] }]
+   *     responses:
+   *       200:
+   *         description: Estatísticas calculadas via aggregation pipeline
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/TaskStats'
+   *       401: { description: Não autenticado }
+   */
+  // Registered before "/:id" so that "stats" is not swallowed as a task id.
+  router.get('/stats', asyncHandler(taskController.stats));
 
   /**
    * @openapi
@@ -81,14 +102,10 @@ export function createTaskRouter(container: Container): Router {
    *       content:
    *         application/json:
    *           schema:
-   *             type: object
-   *             properties:
-   *               title: { type: string }
-   *               description: { type: string }
-   *               status: { type: string, enum: [PENDING, IN_PROGRESS, DONE] }
-   *               dueDate: { type: string, format: date-time }
+   *             $ref: '#/components/schemas/TaskInput'
    *     responses:
    *       200: { description: Tarefa atualizada }
+   *       400: { description: Dados inválidos }
    *       403: { description: Tarefa pertence a outro usuário }
    *       404: { description: Tarefa não encontrada }
    *   delete:

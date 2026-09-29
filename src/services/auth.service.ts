@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { v4 as uuid } from 'uuid';
 import { env } from '../config/env';
 import { PublicUser, User, toPublicUser } from '../domain/entities/user.entity';
 import { IUserRepository } from '../repositories/interfaces/user.repository.interface';
@@ -35,14 +34,13 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, SALT_ROUNDS);
-    const user: User = {
-      id: uuid(),
+    // Identity and createdAt belong to the repository, so the service stays
+    // agnostic about how ids are generated.
+    const user = await this.userRepository.create({
       name: dto.name,
       email: dto.email,
       passwordHash,
-      createdAt: new Date(),
-    };
-    await this.userRepository.create(user);
+    });
 
     return { user: toPublicUser(user), token: this.signToken(user) };
   }
